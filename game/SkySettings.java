@@ -8,6 +8,7 @@ import static org.lwjgl.opengl.GL30.*;
 import shaders.GLSLShader;
 import shaders.LightShader;
 import shaders.SkyShader;
+import shaders.TerrainShader;
 
 public class SkySettings {
     
@@ -28,7 +29,7 @@ public class SkySettings {
         size = Scene.view.farPlane;
     }
     
-    public void render(){
+    public void renderSky(){
         loadShaderSettings();
         shader.loadZenith(zenith);
         shader.loadHorizon(horizon);
@@ -45,16 +46,21 @@ public class SkySettings {
     public void loadShaderSettings(){
         
         shader.start();
-        
         skymesh.bindVAO();
     }
     
     public void updateAmbientForShaders(){
         for(GLSLShader temp:GLSLShader.loadedShaders){
+            temp.start();
             if(temp instanceof LightShader){
                 ((LightShader) temp).loadZenith(zenith);
                 ((LightShader) temp).loadHorizon(horizon);
                 ((LightShader) temp).loadAlbedo(albedo);
+            }
+            if(temp instanceof TerrainShader){
+                ((TerrainShader) temp).loadZenith(zenith);
+                ((TerrainShader) temp).loadHorizon(horizon);
+                ((TerrainShader) temp).loadAlbedo(albedo);
             }
         }
     }

@@ -10,6 +10,7 @@ import meshes.Mesh;
 import org.lwjgl.glfw.GLFW;
 import shaders.LightShader;
 import shaders.GLSLShader;
+import shaders.TerrainShader;
 import textures.TextureManager;
 
 /**
@@ -28,10 +29,13 @@ public class Scene {
     LightShader shader;
     
     //initialize sky settings
-    SkySettings skySettings;
+    public SkySettings skySettings;
     
     //initialize all lights
     Light[] lights;
+    
+    //initialize terrain
+    Terrain terrain;
     
     //total time
     float totaltime = 0;
@@ -53,14 +57,14 @@ public class Scene {
         
         //load sky settings
         skySettings = new SkySettings();
-        skySettings.zenith.set(0.0f, 0.0f, 0.2f);
-        skySettings.horizon.set(0.7f, 0.3f, 0.1f);
-        skySettings.albedo.set(0.5f, 0.0f, 0.0f);
+        //skySettings.zenith.set(0.0f, 0.0f, 0.2f);
+        //skySettings.horizon.set(0f, 3f, 3f);
+        //skySettings.albedo.set(0.0f, 0.0f, 0.0f);
         
          
         
         //creates a specular shader
-        new LightShader("specular");
+        shader = new LightShader("specular");
         
         //create lights
         lights = new Light[4];
@@ -75,25 +79,25 @@ public class Scene {
         ShaderSettings.lights[3]=lights[3];
         
         //create render settings
-        ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Dragon", 1, dragon_mesh));
+        ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Dragon", shader, dragon_mesh));
         ShaderSettings.loadedShaderSettings.get(0).textureId=-1;
         ShaderSettings.loadedShaderSettings.get(0).diffuseColour= new Vec3(1f,1f,1f);
         ShaderSettings.loadedShaderSettings.get(0).shine=20f;
         ShaderSettings.loadedShaderSettings.get(0).specular=2f;
         
-        ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Player", 1, player_test_mesh));
+        ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Player", shader, player_test_mesh));
         ShaderSettings.loadedShaderSettings.get(1).textureId=-1;
         ShaderSettings.loadedShaderSettings.get(1).diffuseColour= new Vec3(.86f,.83f,.4f);
         ShaderSettings.loadedShaderSettings.get(1).shine=2f;
         ShaderSettings.loadedShaderSettings.get(1).specular=.05f;
         
-        ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Tree", 1, tree_mesh));
+        ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Tree", shader, tree_mesh));
         ShaderSettings.loadedShaderSettings.get(2).textureId=-1;
         ShaderSettings.loadedShaderSettings.get(2).diffuseColour= new Vec3(.3f,.7f,.1f);
         ShaderSettings.loadedShaderSettings.get(2).shine=3f;
         ShaderSettings.loadedShaderSettings.get(2).specular=.5f;
         
-        ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Plane", 1, plane_mesh));
+        ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Plane", shader, plane_mesh));
         ShaderSettings.loadedShaderSettings.get(3).textureId=-1;
         ShaderSettings.loadedShaderSettings.get(3).diffuseColour= new Vec3(.86f,.83f,.4f);
         ShaderSettings.loadedShaderSettings.get(3).shine=2f;
@@ -114,8 +118,9 @@ public class Scene {
         //assign entities to render settings
         ShaderSettings.assignEntity(0, dragon);
         ShaderSettings.assignEntity(1, player);
-        //ShaderSettings.assignEntity(3, plane);
         
+        //create terrain
+        terrain = new Terrain();
         
         //reload camera perspective matrix
         view.updatePerspective();
@@ -128,31 +133,39 @@ public class Scene {
         //set dynamic adjusted time values
         DynamicEntity.setDecayRate(delta);
         
+        //update terrain
         
         //update dynamic entities
         player.update(delta);
         
+        //move sun to player
+        lights[0].pos.setFrom(player.pos);
+        lights[0].pos.y=300f;
+        
+        
         //key inputs
         if(InputManager.isPressed(GLFW.GLFW_KEY_L))
-            lights[0].pos.copyFrom(player.pos);
+            lights[0].pos.setFrom(player.pos);
         else if(InputManager.isPressed(GLFW.GLFW_KEY_R))
-            lights[1].pos.copyFrom(player.pos);
+            lights[1].pos.setFrom(player.pos);
         else if(InputManager.isPressed(GLFW.GLFW_KEY_G))
-            lights[2].pos.copyFrom(player.pos);
+            lights[2].pos.setFrom(player.pos);
         else if(InputManager.isPressed(GLFW.GLFW_KEY_B))
-            lights[3].pos.copyFrom(player.pos);
+            lights[3].pos.setFrom(player.pos);
         
         if(InputManager.isPressed(GLFW.GLFW_KEY_3)){
             Vec3 ray = new Vec3();
             ray = view.raycast();
             ray.multiply(10);
             ray.add(view.pos);
-            dragon.rot.copyFrom(view.rot);
+            dragon.rot.setFrom(view.rot);
             dragon.pos.x=ray.x;
             dragon.pos.y=ray.y;
             dragon.pos.z=ray.z;
             dragon.updateTransform();
         }
+        
+        terrain.recenter(player.pos.x, player.pos.z, 5);
         
         //update camera
         view.update(delta);
@@ -160,7 +173,8 @@ public class Scene {
 
     public void draw() {
         ShaderSettings.renderAll();
-        skySettings.render();
+        Terrain.render();
+        skySettings.renderSky();
     }
     
     public void unloadAssets(){

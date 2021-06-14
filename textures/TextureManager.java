@@ -25,7 +25,7 @@ public class TextureManager {
         IntBuffer w = stack.mallocInt(1);
         IntBuffer h = stack.mallocInt(1);
         IntBuffer comp = stack.mallocInt(1);
-        ByteBuffer image = stbi_load("assets/"+textureName+".png", w, h, comp,0);
+        ByteBuffer image = stbi_load("assets/textures/"+textureName+".png", w, h, comp,0);
         if(image == null){
             System.err.println("Failed to load "+textureName+".png" );
         }
@@ -35,8 +35,8 @@ public class TextureManager {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);        
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 2);        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);        
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 1f);        
         
         loadedTextures.add(textureId);
         loadedTextureNames.put(textureName, textureId);

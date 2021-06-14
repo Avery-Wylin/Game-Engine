@@ -1,6 +1,7 @@
 package shaders;
 
 import entities.Entity;
+import game.Main;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import math.Vec3;
@@ -29,12 +30,10 @@ public class ShaderSettings {
     public int textureId;
     public float specular,shine;
     public Vec3 diffuseColour;
-    public float transmissionFactor;
-    public Vec3 transmissionScatter;
     public String name;
     
-    public ShaderSettings(String name, int shaderId, Mesh mesh){
-        setShader(shaderId);
+    public ShaderSettings(String name, LightShader shader, Mesh mesh){
+        this.shader = shader; 
         this.mesh=mesh;
         backfaceCulling = true;
         textureId = 0;
@@ -59,7 +58,8 @@ public class ShaderSettings {
     
     public static void loadGlobalShaderSettings() {
         //set sky *temporary
-        glClearColor(ambient.x, ambient.y, ambient.z, 1f);
+        glClearColor(0,0,0, 1f);
+        
         
         for (GLSLShader temp : GLSLShader.loadedShaders) {
             temp.start();
@@ -74,6 +74,18 @@ public class ShaderSettings {
                         ((LightShader) temp).loadLight(lights[i], i);
                     }
                 }
+            }
+            //apply global values to terrain
+            if(temp instanceof TerrainShader){
+               //load and fog
+                ((TerrainShader) temp).loadFogSettings(fogDensity, fogGradient);
+
+                //load lights, loads all outside lights that are shared globally by all terrains
+                for (int i = 0; i < TerrainShader.MAX_LIGHTS; i++) {
+                    if (lights[i] != null) {
+                        ((TerrainShader) temp).loadLight(lights[i], i);
+                    }
+                } 
             }
         }
 

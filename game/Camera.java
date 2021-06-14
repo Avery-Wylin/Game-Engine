@@ -95,8 +95,8 @@ public class Camera {
     }
     
     public void rotateAround(Vec3 pos2, Vec3 rot2, float rad){
-        pos.copyFrom(pos2);
-        rot.copyFrom(rot2);
+        pos.setFrom(pos2);
+        rot.setFrom(rot2);
         float angle = (float)cos(rot.x);
         pos.x+=angle*rad*sin(rot.y);
         pos.z+=angle*rad*cos(rot.y);

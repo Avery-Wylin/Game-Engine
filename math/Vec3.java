@@ -72,7 +72,7 @@ public class Vec3 {
         return (float)pow(x*x+y*y+z*z,.5);
     }
     
-    public void copyFrom(Vec3 a){
+    public void setFrom(Vec3 a){
         x=a.x;
         y=a.y;
         z=a.z;

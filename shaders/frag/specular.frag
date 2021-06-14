@@ -54,8 +54,6 @@ void main(void){
 
     colour = vec4(combinedDiffuse,1)+vec4(worldLight,1.0)/4 + vec4(combinedSpecular,1.0);
     colour = mix(vec4(horizon,1.0),colour,fogFactor);
-    //colour.xy = uv;
-
 
 
 }
