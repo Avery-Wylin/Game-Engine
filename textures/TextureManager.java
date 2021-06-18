@@ -9,14 +9,15 @@ import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.stb.STBImage.*;
 import org.lwjgl.system.MemoryStack;
 import static org.lwjgl.system.MemoryStack.*;
+import shaders.FBO;
 
 
 public class TextureManager {
     
-    public static ArrayList<Integer> loadedTextures = new ArrayList<>();
+    private static ArrayList<Integer> loadedTextures = new ArrayList<>();
     public static HashMap<String,Integer> loadedTextureNames = new HashMap<>();
         
-    public static void loadTexture(String textureName){
+    public static int loadTexture(String textureName){
         int textureId = glGenTextures();
         glBindTexture(GL_TEXTURE_2D, textureId );
         
@@ -40,6 +41,40 @@ public class TextureManager {
         
         loadedTextures.add(textureId);
         loadedTextureNames.put(textureName, textureId);
+        return textureId;
+    }
+    
+    public static int loadColourFromFBO(String name,FBO fbo,int w, int h){
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo.getId());
+        int textureId = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, textureId);
+        glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,w,h,0,GL_RGB,GL_UNSIGNED_BYTE,(ByteBuffer)null);
+        glTexParameterIi(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameterIi(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,textureId,0);
+        loadedTextures.add(textureId);
+        loadedTextureNames.put(name,textureId);
+        return textureId;
+    }
+    
+    public static int loadDepthFromFBO(String name,FBO fbo,int w, int h){
+        fbo.start();
+        int textureId = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, textureId);
+        glTexImage2D(GL_TEXTURE_2D,0,GL_DEPTH_COMPONENT32,w,h,0,GL_DEPTH_COMPONENT,GL_FLOAT,(ByteBuffer)null);
+        glTexParameterIi(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameterIi(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,textureId,0);
+        loadedTextures.add(textureId);
+        loadedTextureNames.put(name,textureId);
+        return textureId;
+    }
+    
+    public static void deleteTexture(String name){
+        int textureId = loadedTextureNames.get(name);
+        glDeleteTextures(textureId);
+        loadedTextures.remove(textureId);
+        loadedTextureNames.remove(name);
     }
     
     public static void deleteAllTextures(){
@@ -49,4 +84,5 @@ public class TextureManager {
         loadedTextures.clear();
         loadedTextureNames.clear();
     }
+    
 }

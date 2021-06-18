@@ -12,11 +12,15 @@ public class TerrainShader extends GLSLShader {
             fogDensity,
             zenith,
             horizon,
-            albedo;
+            albedo,
+            textureTop,
+            textureSide;
     protected int[] lightColour,lightPosition,attenuation;
     
     public TerrainShader() {
         super("terrain");
+        start();
+        loadTextures();
     }
     
 
@@ -44,6 +48,8 @@ public class TerrainShader extends GLSLShader {
         zenith = getUniformLocation("zenith");
         horizon = getUniformLocation("horizon");
         albedo = getUniformLocation("albedo");
+        textureTop = getUniformLocation("textureTop");
+        textureSide = getUniformLocation("textureSide");
     }
     
     public void loadLight(Light light,int slot){
@@ -73,5 +79,10 @@ public class TerrainShader extends GLSLShader {
     
     public void loadAlbedo(Vec3 albedo){
         loadUniformVector(this.albedo, albedo);
+    }
+    
+    public void loadTextures(){
+        loadUniformInt(this.textureTop, 0);
+        loadUniformInt(this.textureSide, 1);
     }
 }

@@ -8,6 +8,9 @@ out vec3 toLight[4];
 out vec2 uv;
 out vec3 toCamera;
 out float fogFactor;
+out vec2  uvYZ;
+out vec2  uvXZ;
+out vec2  uvXY;
 
 uniform mat4 transformationMatrix;
 uniform mat4 cameraMatrix;
@@ -18,6 +21,7 @@ uniform float fogGradient;
 
 void main(void){
     
+
     vec4 objectSpace = transformationMatrix*vec4(pos,1.0);
     vec4 cameraSpace = cameraMatrix*objectSpace;
     gl_Position = projectionMatrix*cameraSpace;
@@ -33,5 +37,8 @@ void main(void){
     float depth = length(cameraSpace.xyz);
     fogFactor = exp(-pow((depth*fogDensity),fogGradient));
     fogFactor = clamp(fogFactor,0.0,1.0);
-
+    
+    uvYZ= objectSpace.yz;
+    uvXZ= objectSpace.xz;
+    uvXY= objectSpace.xy;
 }

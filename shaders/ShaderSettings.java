@@ -16,8 +16,8 @@ public class ShaderSettings {
     
     public static ArrayList<ShaderSettings> loadedShaderSettings = new ArrayList<>();
     public static Vec3 ambient = new Vec3(.5f,.5f,.5f);
-    public static float fogDensity = .02f;
-    public static float fogGradient = 5f;
+    public static float fogDensity = .005f;
+    public static float fogGradient = 2f;
     public static Light[] lights = new Light[LightShader.MAX_LIGHTS];
     
     public LinkedList<Entity> assignedEntities = new LinkedList<>();

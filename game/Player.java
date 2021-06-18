@@ -40,6 +40,9 @@ public class Player extends DynamicEntity{
             delta_pos.y+=speed;
             isDynamic=true;
         }
+        if(InputManager.isPressed(GLFW_KEY_Q)){
+            delta_pos.multiply(1.2f);
+        }
         if(InputManager.isPressed(GLFW_KEY_E)){
             delta_pos.y-=speed;
             isDynamic=true;

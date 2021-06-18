@@ -6,10 +6,15 @@ in vec3 toLight[4];
 in vec2 uv;
 in vec3 toCamera;
 in float fogFactor;
+in vec3 vertexColour;
+in vec2  uvYZ;
+in vec2  uvXZ;
+in vec2  uvXY;
 
 out vec4 colour;
 
-uniform sampler2D textureImg;
+uniform sampler2D textureTop;
+uniform sampler2D textureSide;
 uniform vec3 lightColour[4];
 uniform vec3 attenuation[4];
 uniform vec3 diffuseColour;
@@ -19,12 +24,14 @@ uniform vec3 albedo;
 
 void main(void){
     
-    vec3 unitSurfaceNormal = surfaceNormal;
     vec3 unitToCamera = normalize(toCamera);
 
     vec3 combinedDiffuse = vec3(0,0,0);
     vec3 combinedSpecular = vec3(0,0,0);
-    vec3 textureColour = texture(textureImg,uv).xyz + diffuseColour;
+    vec3 textureColour = vec3(0,0,0);
+    textureColour =  mix(textureColour,texture(textureSide,vec2(uvYZ)).xyz,abs(surfaceNormal.x));
+    textureColour =  mix(textureColour,texture(textureTop,vec2(uvXZ)).xyz,pow(abs(surfaceNormal.y),4));
+    textureColour =  mix(textureColour,texture(textureSide,vec2(uvXY)).xyz,abs(surfaceNormal.z));
     if(fogFactor<.05){
         colour.xyz = horizon;
         return;
@@ -35,7 +42,7 @@ void main(void){
         float distLight = length(toLight[i]);
         float attenuationFactor = attenuation[i].x+(attenuation[i].y*distLight)+(attenuation[i].z*distLight*distLight);
         vec3 unitToLight = toLight[i]/distLight;
-        float rawDiffuse = dot(unitSurfaceNormal,unitToLight);
+        float rawDiffuse = dot(surfaceNormal,unitToLight);
         combinedDiffuse += max(rawDiffuse,0)*textureColour* (lightColour[i]/attenuationFactor);
     }
 
@@ -45,5 +52,4 @@ void main(void){
 
     colour = vec4(combinedDiffuse,1)+vec4(worldLight,1.0)/4;
     colour = mix(vec4(horizon,1.0),colour,fogFactor);
-    //colour.xy = uv;
 }

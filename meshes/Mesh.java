@@ -361,7 +361,7 @@ public class Mesh {
     
     public static float[] createSmoothNormals(float[] points, int[] order){
         //stores the normals in vertex order
-        float[] normals = new float[order.length*3];
+        float[] normals = new float[points.length];
         //stores the number of normals for a vertex
         int[] normal_count = new int[normals.length/3];
         
@@ -378,6 +378,7 @@ public class Mesh {
             b.add(a);
             c.add(a);
             a=b.cross(c);
+            a.normalize();
             
             //store the normal of this triangle in each of the individual point's normals
             //add the normals, they will be divided after the loop completes

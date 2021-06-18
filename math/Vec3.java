@@ -113,5 +113,13 @@ public class Vec3 {
         return r;
     }
     
+    public static float barycentric(Vec3 a, Vec3 b, Vec3 c,float x,float z){
+        float denom = (b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z);
+        float d0 = ((b.z-c.z)*(x-c.x)+(c.z-b.x)*(z-c.z))/denom;
+        float d1 = ((c.z-a.z)*(x-c.x)+(a.x-c.x)*(z-c.z))/denom;
+        float d2 = 1f-d0-d1;
+        return d0 * a.y + d1 * b.y + d2 * c.y;
+    }
+    
     
 }

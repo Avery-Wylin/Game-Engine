@@ -4,13 +4,12 @@ import shaders.Light;
 import shaders.ShaderSettings;
 import entities.Entity;
 import entities.Terrain;
-import math.Vec2;
 import math.Vec3;
 import meshes.Mesh;
 import org.lwjgl.glfw.GLFW;
+import shaders.FBO;
 import shaders.LightShader;
 import shaders.GLSLShader;
-import shaders.TerrainShader;
 import textures.TextureManager;
 
 /**
@@ -46,19 +45,17 @@ public class Scene {
     
     private void init(){
         //load textures
-        TextureManager.loadTexture("uvTest");
-        TextureManager.loadTexture("grass");
         
         //load meshes
         Mesh dragon_mesh = new Mesh("dragon");
-        Mesh player_test_mesh = new Mesh("player");
+        Mesh player_test_mesh = new Mesh("player test");
         Mesh tree_mesh = new Mesh("tree");
         Mesh plane_mesh = new Mesh("plane");
         
         //load sky settings
         skySettings = new SkySettings();
         //skySettings.zenith.set(0.0f, 0.0f, 0.2f);
-        //skySettings.horizon.set(0f, 3f, 3f);
+        skySettings.horizon.set(.9f, .85f, .8f);
         //skySettings.albedo.set(0.0f, 0.0f, 0.0f);
         
          
@@ -87,9 +84,9 @@ public class Scene {
         
         ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Player", shader, player_test_mesh));
         ShaderSettings.loadedShaderSettings.get(1).textureId=-1;
-        ShaderSettings.loadedShaderSettings.get(1).diffuseColour= new Vec3(.86f,.83f,.4f);
-        ShaderSettings.loadedShaderSettings.get(1).shine=2f;
-        ShaderSettings.loadedShaderSettings.get(1).specular=.05f;
+        ShaderSettings.loadedShaderSettings.get(1).diffuseColour= new Vec3(0.5f,0.5f,1.0f);
+        ShaderSettings.loadedShaderSettings.get(1).shine=3f;
+        ShaderSettings.loadedShaderSettings.get(1).specular=.5f;
         
         ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Tree", shader, tree_mesh));
         ShaderSettings.loadedShaderSettings.get(2).textureId=-1;
@@ -133,15 +130,22 @@ public class Scene {
         //set dynamic adjusted time values
         DynamicEntity.setDecayRate(delta);
         
-        //update terrain
         
-        //update dynamic entities
+        //loop player
+        if(player.pos.x>=Terrain.SCALE){
+            player.pos.x=0;
+        }
+        else if(player.pos.x<0){
+            player.pos.x=Terrain.SCALE;
+        }
+        if(player.pos.z>=Terrain.SCALE){
+            player.pos.z=0;
+        }
+        else if(player.pos.z<0){
+            player.pos.z=Terrain.SCALE;
+        }
+        
         player.update(delta);
-        
-        //move sun to player
-        lights[0].pos.setFrom(player.pos);
-        lights[0].pos.y=300f;
-        
         
         //key inputs
         if(InputManager.isPressed(GLFW.GLFW_KEY_L))
@@ -165,7 +169,29 @@ public class Scene {
             dragon.updateTransform();
         }
         
-        terrain.recenter(player.pos.x, player.pos.z, 5);
+        
+        terrain.recenter(player.pos.x, player.pos.z,.25f);
+        
+        float h = terrain.getHeightAt(player.pos.x, player.pos.z);
+        float slope = terrain.getHeightAt(player.pos.x+Math.copySign(.1f,player.delta_pos.x), player.pos.z+Math.copySign(.1f,player.delta_pos.z))-h;
+        if(slope>.2f){
+            System.out.println(slope);
+            player.delta_pos.x-=Math.copySign(slope*10*player.delta_pos.x,player.delta_pos.x);
+            player.delta_pos.z-=Math.copySign(slope*10*player.delta_pos.z,player.delta_pos.z);
+        }
+        if(player.pos.y<h){
+            player.pos.y=h;
+            player.delta_pos.y=0;
+        }
+        else if(player.pos.y>h+.01f){
+            player.delta_pos.y-=.7f;
+        }
+
+        //move sun to player
+        lights[0].pos.setFrom(player.pos);
+        lights[0].pos.y+=100;
+        lights[0].pos.x+=100;
+        
         
         //update camera
         view.update(delta);
@@ -181,6 +207,7 @@ public class Scene {
         GLSLShader.deleteAll();
         Mesh.removeAll();
         TextureManager.deleteAllTextures();
+        FBO.deleteAllFBOs();
     }
 
 

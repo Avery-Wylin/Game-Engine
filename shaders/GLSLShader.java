@@ -61,6 +61,10 @@ public abstract class GLSLShader {
         glUniform1f(location, uniform);
     }
     
+    protected void loadUniformInt(int location,int uniform){
+        glUniform1i(location, uniform);
+    }
+    
     protected void loadUniformVector(int location, Vec3 vec){
         glUniform3f(location,vec.x,vec.y,vec.z);
     }
