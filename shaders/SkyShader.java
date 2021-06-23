@@ -1,7 +1,7 @@
 package shaders;
 
-import math.Vec3;
 import meshes.Mesh;
+import org.joml.Vector3f;
 
 public class SkyShader extends GLSLShader {
 
@@ -24,16 +24,16 @@ public class SkyShader extends GLSLShader {
         albedo = getUniformLocation("albedo");
     }
     
-    public void loadZenith(Vec3 zenith){
-        loadUniformVector(this.zenith, zenith);
+    public void loadZenith(Vector3f zenith){
+        loadUniformVector3f(this.zenith, zenith);
     }
     
-    public void loadHorizon(Vec3 horizon){
-        loadUniformVector(this.horizon, horizon);
+    public void loadHorizon(Vector3f horizon){
+        loadUniformVector3f(this.horizon, horizon);
     }
     
-    public void loadAlbedo(Vec3 albedo){
-        loadUniformVector(this.albedo, albedo);
+    public void loadAlbedo(Vector3f albedo){
+        loadUniformVector3f(this.albedo, albedo);
     }
     
 }

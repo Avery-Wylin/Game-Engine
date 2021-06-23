@@ -7,16 +7,17 @@ import java.io.IOException;
 import static java.lang.Math.*;
 import java.util.ArrayList;
 import math.OpenSimplex2F;
-import math.TransformMatrix;
-import math.Vec3;
 import meshes.Mesh;
+import org.joml.Matrix4f;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 import static org.lwjgl.opengl.GL30.*;
 import shaders.TerrainShader;
 import textures.TextureManager;
 
 public class Terrain {
 
-    static int RENDER_COUNT = 200;
+    static int RENDER_COUNT = 150;
     public static int SIDE_SQUARE_COUNT = 300;
     public static float SCALE = 300f;
     public static int TOTAL_SQUARE_COUNT = SIDE_SQUARE_COUNT * SIDE_SQUARE_COUNT;
@@ -26,7 +27,7 @@ public class Terrain {
     public static TerrainShader shader = new TerrainShader();
     static int x = 0;
     static int z = 0;
-    static int textureTop = TextureManager.loadTexture("sand");
+    static int textureTop = TextureManager.loadTexture("grass");
     static int textureSide = TextureManager.loadTexture("rock");
       
 
@@ -35,11 +36,7 @@ public class Terrain {
 
     public Terrain() {
         heights = new float[HEIGHT_COUNT];
-//        for (int i = 0; i < HEIGHT_COUNT; i++) {
-//            heights[i] = 0;//generativeFunction((float) i % (SIDE_SQUARE_COUNT + 1) * SQUARE_SCALE, (float) i / (SIDE_SQUARE_COUNT + 1) * SQUARE_SCALE) / SCALE;
-//            heights[i] *= SCALE;
-//        }
-        loadDataFromObj("1");
+        loadDataFromObj("yinyang");
         generateSubMesh(heights, x, z, RENDER_COUNT, terrainMesh);
     }
 
@@ -65,7 +62,7 @@ public class Terrain {
         float[] pos = new float[3 * vertexCount];
         int[] order = new int[6 * totalRenderSquares];
 
-        //generate positions and uvs
+        //GENERATE POSITIONS AND UV
         int index = 0;
         int squareX;
         int squareZ;
@@ -91,11 +88,10 @@ public class Terrain {
             }
         }
 
-        //generate order
+        //GENERATE ORDER
         index = 0;
         //iterate over each square
         for (int i = 0; i < totalRenderSquares; i++) {
-            //recall x = i and z = i/sideCount
             
             //top left
             int tl = i + i/(renderSquares);
@@ -130,6 +126,8 @@ public class Terrain {
             }
 
         }
+        
+        //terrains generate their uvs in the vertex shader
         float[] normal = Mesh.createSmoothNormals(pos, order);
         mesh.load(pos, order,null,normal);
     }
@@ -150,7 +148,7 @@ public class Terrain {
 
     public void loadDataFromObj(String file) {
         BufferedReader reader = null;
-        ArrayList<Vec3> inHeights = new ArrayList<>();
+        ArrayList<Vector3f> inHeights = new ArrayList<>();
         float maxX = 0;
         float maxZ = 0;
         file = "assets/terrainData/" + file + ".obj";
@@ -162,7 +160,7 @@ public class Terrain {
                 lineIn = reader.readLine();
                 if(lineIn.startsWith("v ")) {
                     String[] contents = lineIn.split(" ");
-                    inHeights.add(new Vec3(
+                    inHeights.add(new Vector3f(
                             Float.parseFloat(contents[1]),
                             Float.parseFloat(contents[2]),
                             Float.parseFloat(contents[3])
@@ -213,7 +211,10 @@ public class Terrain {
         SQUARE_SCALE = 1f / (SIDE_SQUARE_COUNT);
     }
     
-      public float getHeightAt(float wx, float wz){
+    /**
+     * Returns a vector where x and z represent the normal of the triangle and the y value represents the Barycentric height.
+     */
+      public float getHeightAndSlope(float wx, float wz,Vector3f slope){
           //modulate the world space
           wx%=SCALE;
           wz%=SCALE;
@@ -239,40 +240,62 @@ public class Terrain {
           float squareLength = SCALE*SQUARE_SCALE;
           float insideX = wx - squareWX;
           float insideZ = wz - squareWZ;
-          Vec3 a;
-          Vec3 b;
-          Vec3 c;
+          Vector3f a;
+          Vector3f b;
+          Vector3f c;
           //for some reason the order matters for this barycentric function?
           if(abs(tl-br)>abs(tr-bl)){
               //split positive slope
               if(insideX+insideZ<squareLength){//top
-                  a = new Vec3(0,bl,squareLength);
-                  b = new Vec3(squareLength,tr,0);
-                  c = new Vec3(0,tl,0);
+                  a = new Vector3f(0,bl,squareLength);
+                  b = new Vector3f(squareLength,tr,0);
+                  c = new Vector3f(0,tl,0);
               }
               else{//bottom
-                  a = new Vec3(squareLength,tr,0);
-                  b = new Vec3(0,bl,squareLength);
-                  c = new Vec3(squareLength,br,squareLength);
+                  a = new Vector3f(squareLength,tr,0);
+                  b = new Vector3f(0,bl,squareLength);
+                  c = new Vector3f(squareLength,br,squareLength);
               }
           }
           else{
               //split negative slope
               if(insideZ<insideX){//top
-                  a = new Vec3(squareLength,tr,0);
-                  b = new Vec3(0,tl,0);
-                  c = new Vec3(squareLength,br,squareLength);
+                  a = new Vector3f(squareLength,tr,0);
+                  b = new Vector3f(0,tl,0);
+                  c = new Vector3f(squareLength,br,squareLength);
               }
               else{//bottom
-                  a = new Vec3(0,tl,0);
-                  b = new Vec3(0,bl,squareLength);
-                  c = new Vec3(squareLength,br,squareLength);
+                  a = new Vector3f(0,tl,0);
+                  b = new Vector3f(0,bl,squareLength);
+                  c = new Vector3f(squareLength,br,squareLength);
               }
           }
-          float r = Vec3.barycentric(a, b, c, insideX, insideZ);
-          return r;
+          float wy = barycentric(a, b, c, insideX, insideZ);
+          b.sub(a);
+          c.sub(a);
+          b.cross(c,a);
+          a.normalize();
+          slope.set(a);
+          return wy;
       }
       
+      
+      /**
+       * Returns the square for the given the world space.
+       */
+      public Vector2f getSquareAt(float wx, float wz){
+          //modulate the world space
+          wx%=SCALE;
+          wz%=SCALE;
+          //fix the negative modulus
+          wx+=wx<0?SCALE:0;
+          wz+=wz<0?SCALE:0;
+          //convert into square space
+          return new Vector2f(
+          (int)(wx/SCALE*(SIDE_SQUARE_COUNT))%SIDE_SQUARE_COUNT,
+          (int)(wz/SCALE*(SIDE_SQUARE_COUNT))%SIDE_SQUARE_COUNT);
+          
+      }
     
       public static void render() {
         shader.start();
@@ -283,10 +306,10 @@ public class Terrain {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D,textureTop);
         //set diffuse colour
-        shader.loadDiffuseColour(new Vec3(1,1,1));
-        TransformMatrix transform = new TransformMatrix();
-        transform.scale(SCALE, SCALE, SCALE);
+        shader.loadDiffuseColour(new Vector3f(1,1,1));
+        Matrix4f transform = new Matrix4f();
         transform.translate(x * SQUARE_SCALE * SCALE, 0, z * SQUARE_SCALE * SCALE);
+        transform.scale(SCALE, SCALE, SCALE);
         terrainMesh.bindVAO();
         shader.loadTransformationMatrix(transform);
         glDrawElements(GL_TRIANGLES, terrainMesh.getVertexCount(), GL_UNSIGNED_INT, 0);
@@ -297,6 +320,14 @@ public class Terrain {
 //        glLineWidth(5f);
 //        glDrawElements(GL_LINES, terrainMesh.getVertexCount(), GL_UNSIGNED_INT, 0);
         terrainMesh.unbindVAO();
+    }
+      
+    public static float barycentric(Vector3f a, Vector3f b, Vector3f c,float x,float z){
+        float denom = (b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z);
+        float d0 = ((b.z-c.z)*(x-c.x)+(c.z-b.x)*(z-c.z))/denom;
+        float d1 = ((c.z-a.z)*(x-c.x)+(a.x-c.x)*(z-c.z))/denom;
+        float d2 = 1f-d0-d1;
+        return d0 * a.y + d1 * b.y + d2 * c.y;
     }
 
 }

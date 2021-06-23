@@ -1,7 +1,7 @@
 package shaders;
 
-import math.Vec3;
 import meshes.Mesh;
+import org.joml.Vector3f;
 
 public class TerrainShader extends GLSLShader {
     public static final int MAX_LIGHTS = 4;
@@ -54,14 +54,14 @@ public class TerrainShader extends GLSLShader {
     
     public void loadLight(Light light,int slot){
         if(slot<MAX_LIGHTS){
-            super.loadUniformVector(lightPosition[slot], light.pos);
-            super.loadUniformVector(lightColour[slot], light.col);
-            super.loadUniformVector(attenuation[slot], light.attenuation);
+            super.loadUniformVector3f(lightPosition[slot], light.pos);
+            super.loadUniformVector3f(lightColour[slot], light.col);
+            super.loadUniformVector3f(attenuation[slot], light.attenuation);
         }
     }
     
-    public void loadDiffuseColour(Vec3 diffuseColour){
-        super.loadUniformVector(this.diffuseColour, diffuseColour);
+    public void loadDiffuseColour(Vector3f diffuseColour){
+        super.loadUniformVector3f(this.diffuseColour, diffuseColour);
     }
     
     public void loadFogSettings(float density, float gradient){
@@ -69,16 +69,16 @@ public class TerrainShader extends GLSLShader {
         super.loadUniformFloat(fogGradient, gradient);
     }
     
-    public void loadZenith(Vec3 zenith){
-        loadUniformVector(this.zenith, zenith);
+    public void loadZenith(Vector3f zenith){
+        loadUniformVector3f(this.zenith, zenith);
     }
     
-    public void loadHorizon(Vec3 horizon){
-        loadUniformVector(this.horizon, horizon);
+    public void loadHorizon(Vector3f horizon){
+        loadUniformVector3f(this.horizon, horizon);
     }
     
-    public void loadAlbedo(Vec3 albedo){
-        loadUniformVector(this.albedo, albedo);
+    public void loadAlbedo(Vector3f albedo){
+        loadUniformVector3f(this.albedo, albedo);
     }
     
     public void loadTextures(){

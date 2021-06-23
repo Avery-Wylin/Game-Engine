@@ -1,13 +1,12 @@
 package shaders;
 
-import static com.sun.xml.internal.ws.addressing.EndpointReferenceUtil.transform;
-import math.TransformMatrix;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
-import math.Vec3;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL30.*;
 
@@ -51,9 +50,9 @@ public abstract class GLSLShader {
         return glGetUniformLocation(programId, uniformName);
     }
     
-    protected void loadUniformMatrix(int location, TransformMatrix transform){
+    protected void loadUniformMatrix4f(int location, Matrix4f transform){
         FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
-        transform.toFloatBuffer(buffer);
+        transform.get(buffer);
         glUniformMatrix4fv(location, false, buffer);
     }
     
@@ -65,20 +64,20 @@ public abstract class GLSLShader {
         glUniform1i(location, uniform);
     }
     
-    protected void loadUniformVector(int location, Vec3 vec){
+    protected void loadUniformVector3f(int location, Vector3f vec){
         glUniform3f(location,vec.x,vec.y,vec.z);
     }
     
-    public void loadTransformationMatrix(TransformMatrix transform){
-         loadUniformMatrix(transformMatrixLocation, transform);
+    public void loadTransformationMatrix(Matrix4f transform){
+         loadUniformMatrix4f(transformMatrixLocation, transform);
     }
     
-    public void loadCameraMatrix(TransformMatrix transform){
-         loadUniformMatrix(cameraMatrixLocation, transform);
+    public void loadCameraMatrix(Matrix4f transform){
+         loadUniformMatrix4f(cameraMatrixLocation, transform);
     }
     
-    public void loadProjectionMatrix(TransformMatrix transform){
-         loadUniformMatrix(projectionMatrixLocation, transform);
+    public void loadProjectionMatrix(Matrix4f transform){
+         loadUniformMatrix4f(projectionMatrixLocation, transform);
     }
     
     

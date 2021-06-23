@@ -38,7 +38,7 @@ void main(void){
     fogFactor = exp(-pow((depth*fogDensity),fogGradient));
     fogFactor = clamp(fogFactor,0.0,1.0);
     
-    uvYZ= objectSpace.yz;
-    uvXZ= objectSpace.xz;
-    uvXY= objectSpace.xy;
+    uvYZ= objectSpace.yz/4;
+    uvXZ= objectSpace.xz/4;
+    uvXY= objectSpace.xy/4;
 }

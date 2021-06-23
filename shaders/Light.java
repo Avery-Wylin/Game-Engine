@@ -1,15 +1,13 @@
 package shaders;
 
-import math.Vec3;
-import shaders.LightShader;
-import shaders.GLSLShader;
+import org.joml.Vector3f;
 
 public class Light {
-    public Vec3 pos;
-    public Vec3 col;
-    public Vec3 attenuation;
+    public Vector3f pos;
+    public Vector3f col;
+    public Vector3f attenuation;
 
-    public Light(Vec3 pos, Vec3 col, Vec3 attenuation){
+    public Light(Vector3f pos, Vector3f col, Vector3f attenuation){
         this.pos = pos;
         this.col=col;
         this.attenuation = attenuation;

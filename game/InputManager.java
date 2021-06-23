@@ -2,6 +2,7 @@ package game;
 
 import static game.Main.mainScene;
 import java.util.HashMap;
+import org.lwjgl.glfw.GLFW;
 import static org.lwjgl.glfw.GLFW.glfwSetCursorPos;
 
 
@@ -10,8 +11,8 @@ public final class InputManager {
     public static int keymods;
     public static float cursorX;
     public static float cursorY;
-    public static int width;
-    public static int height;
+    public static int windowWidth;
+    public static int windowHeight;
     public static byte cursorDown = 0x0;
     public static HashMap<Integer,Boolean> keyStates = new HashMap<>();
     
@@ -39,13 +40,16 @@ public final class InputManager {
     }
     
     static void cursorMoveAction() {
-        Scene.player.rot.y -= (cursorX - width/ 2) / width;
-        if (Math.abs(Scene.player.rot.x - (cursorY - height / 2))/ width < 1f) {
-            Scene.player.rot.x -= (cursorY - height / 2) / height;
+        if(!isPressed(GLFW.GLFW_KEY_2)){
+            
+        Scene.player.rot.y -= (cursorX - windowWidth/ 2) / windowWidth;
+        if (Math.abs(Scene.player.rot.x + (cursorY - windowHeight / 2))/ windowWidth < 1f) {
+            Scene.player.rot.x -= (cursorY - windowHeight / 2) / windowHeight;
         }
         mainScene.view.updateCameraTransform();
-        glfwSetCursorPos(Main.window, width / 2, height / 2);
+        glfwSetCursorPos(Main.window, windowWidth / 2, windowHeight / 2);
         Scene.player.updateTransform();
+        }
     }
 
 }

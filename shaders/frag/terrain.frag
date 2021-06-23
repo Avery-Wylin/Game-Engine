@@ -30,8 +30,8 @@ void main(void){
     vec3 combinedSpecular = vec3(0,0,0);
     vec3 textureColour = vec3(0,0,0);
     textureColour =  mix(textureColour,texture(textureSide,vec2(uvYZ)).xyz,abs(surfaceNormal.x));
-    textureColour =  mix(textureColour,texture(textureTop,vec2(uvXZ)).xyz,pow(abs(surfaceNormal.y),4));
     textureColour =  mix(textureColour,texture(textureSide,vec2(uvXY)).xyz,abs(surfaceNormal.z));
+    textureColour =  mix(textureColour,texture(textureTop,vec2(uvXZ)).xyz,round(pow(abs(surfaceNormal.y),4)));
     if(fogFactor<.05){
         colour.xyz = horizon;
         return;
@@ -49,7 +49,6 @@ void main(void){
     vec3 worldLight = horizon;
     worldLight = mix(worldLight,zenith,dot(surfaceNormal,vec3(0,1,0)));
     worldLight = mix(worldLight,albedo,dot(surfaceNormal,vec3(0,-1,0)));
-
     colour = vec4(combinedDiffuse,1)+vec4(worldLight,1.0)/4;
     colour = mix(vec4(horizon,1.0),colour,fogFactor);
 }

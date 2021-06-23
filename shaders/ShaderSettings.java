@@ -1,22 +1,18 @@
 package shaders;
 
 import entities.Entity;
-import game.Main;
 import java.util.ArrayList;
 import java.util.LinkedList;
-import math.Vec3;
 import meshes.Mesh;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 import static org.lwjgl.opengl.GL30.*;
-import org.lwjgl.opengl.GL32;
-import shaders.LightShader;
-import shaders.GLSLShader;
 
 public class ShaderSettings {
     
     public static ArrayList<ShaderSettings> loadedShaderSettings = new ArrayList<>();
-    public static Vec3 ambient = new Vec3(.5f,.5f,.5f);
-    public static float fogDensity = .005f;
+    public static Vector3f ambient = new Vector3f(.5f,.5f,.5f);
+    public static float fogDensity = .01f;
     public static float fogGradient = 2f;
     public static Light[] lights = new Light[LightShader.MAX_LIGHTS];
     
@@ -29,7 +25,7 @@ public class ShaderSettings {
     public boolean isTextured;
     public int textureId;
     public float specular,shine;
-    public Vec3 diffuseColour;
+    public Vector3f diffuseColour;
     public String name;
     
     public ShaderSettings(String name, LightShader shader, Mesh mesh){
@@ -39,7 +35,7 @@ public class ShaderSettings {
         textureId = 0;
         specular = 2f;
         shine = 30f;
-        diffuseColour = new Vec3(.8f,.8f,.8f);
+        diffuseColour = new Vector3f(.8f,.8f,.8f);
         this.name = name;
     }
     

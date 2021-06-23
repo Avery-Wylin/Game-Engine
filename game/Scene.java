@@ -4,8 +4,8 @@ import shaders.Light;
 import shaders.ShaderSettings;
 import entities.Entity;
 import entities.Terrain;
-import math.Vec3;
 import meshes.Mesh;
+import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import shaders.FBO;
 import shaders.LightShader;
@@ -55,7 +55,7 @@ public class Scene {
         //load sky settings
         skySettings = new SkySettings();
         //skySettings.zenith.set(0.0f, 0.0f, 0.2f);
-        skySettings.horizon.set(.9f, .85f, .8f);
+        skySettings.horizon.set(.9f, .7f, .9f);
         //skySettings.albedo.set(0.0f, 0.0f, 0.0f);
         
          
@@ -65,10 +65,10 @@ public class Scene {
         
         //create lights
         lights = new Light[4];
-        lights[0] = new Light(new Vec3(0f,100f,00f),new Vec3(1f,.9f,.6f),new Vec3(1f,0f,0f));
-        lights[1] = new Light(new Vec3(5f,20f,-10f),new Vec3(1f,0f,0f),new Vec3(1f,0f,.1f));
-        lights[2] = new Light(new Vec3(5f,20f,-10f),new Vec3(0f,1f,0f),new Vec3(1f,0f,.1f));
-        lights[3] = new Light(new Vec3(5f,20f,-10f),new Vec3(0f,0f,1f),new Vec3(1f,0f,.1f));
+        lights[0] = new Light(new Vector3f(0f,100f,00f),new Vector3f(1f,.9f,.6f),new Vector3f(1f,0f,0f));
+        lights[1] = new Light(new Vector3f(5f,20f,-10f),new Vector3f(1f,0f,0f),new Vector3f(1f,0f,.1f));
+        lights[2] = new Light(new Vector3f(5f,20f,-10f),new Vector3f(0f,1f,0f),new Vector3f(1f,0f,.1f));
+        lights[3] = new Light(new Vector3f(5f,20f,-10f),new Vector3f(0f,0f,1f),new Vector3f(1f,0f,.1f));
         
         ShaderSettings.lights[0]=lights[0];
         ShaderSettings.lights[1]=lights[1];
@@ -78,36 +78,36 @@ public class Scene {
         //create render settings
         ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Dragon", shader, dragon_mesh));
         ShaderSettings.loadedShaderSettings.get(0).textureId=-1;
-        ShaderSettings.loadedShaderSettings.get(0).diffuseColour= new Vec3(1f,1f,1f);
+        ShaderSettings.loadedShaderSettings.get(0).diffuseColour= new Vector3f(1f,1f,1f);
         ShaderSettings.loadedShaderSettings.get(0).shine=20f;
         ShaderSettings.loadedShaderSettings.get(0).specular=2f;
         
         ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Player", shader, player_test_mesh));
         ShaderSettings.loadedShaderSettings.get(1).textureId=-1;
-        ShaderSettings.loadedShaderSettings.get(1).diffuseColour= new Vec3(0.5f,0.5f,1.0f);
+        ShaderSettings.loadedShaderSettings.get(1).diffuseColour= new Vector3f(0.5f,0.5f,1.0f);
         ShaderSettings.loadedShaderSettings.get(1).shine=3f;
         ShaderSettings.loadedShaderSettings.get(1).specular=.5f;
         
         ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Tree", shader, tree_mesh));
         ShaderSettings.loadedShaderSettings.get(2).textureId=-1;
-        ShaderSettings.loadedShaderSettings.get(2).diffuseColour= new Vec3(.3f,.7f,.1f);
+        ShaderSettings.loadedShaderSettings.get(2).diffuseColour= new Vector3f(.3f,.7f,.1f);
         ShaderSettings.loadedShaderSettings.get(2).shine=3f;
         ShaderSettings.loadedShaderSettings.get(2).specular=.5f;
         
         ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Plane", shader, plane_mesh));
         ShaderSettings.loadedShaderSettings.get(3).textureId=-1;
-        ShaderSettings.loadedShaderSettings.get(3).diffuseColour= new Vec3(.86f,.83f,.4f);
+        ShaderSettings.loadedShaderSettings.get(3).diffuseColour= new Vector3f(.86f,.83f,.4f);
         ShaderSettings.loadedShaderSettings.get(3).shine=2f;
         ShaderSettings.loadedShaderSettings.get(3).specular=.05f;
         
         //create entities
          
         dragon = new Entity();
-        dragon.scale.multiply(.2f);
+        dragon.scale.mul(.2f);
         dragon.updateTransform();
         
         player = new Player();
-        player.scale.multiply(.5f);
+        player.scale.mul(.5f);
         player.updateTransform();
         
         
@@ -145,52 +145,47 @@ public class Scene {
             player.pos.z=Terrain.SCALE;
         }
         
+       
+        
         player.update(delta);
         
         //key inputs
         if(InputManager.isPressed(GLFW.GLFW_KEY_L))
-            lights[0].pos.setFrom(player.pos);
+            lights[0].pos.set(player.pos);
         else if(InputManager.isPressed(GLFW.GLFW_KEY_R))
-            lights[1].pos.setFrom(player.pos);
+            lights[1].pos.set(player.pos);
         else if(InputManager.isPressed(GLFW.GLFW_KEY_G))
-            lights[2].pos.setFrom(player.pos);
+            lights[2].pos.set(player.pos);
         else if(InputManager.isPressed(GLFW.GLFW_KEY_B))
-            lights[3].pos.setFrom(player.pos);
+            lights[3].pos.set(player.pos);
+        else if(InputManager.isPressed(GLFW.GLFW_KEY_DOWN)){
+            Scene.view.FOV-=1;
+            Scene.view.updatePerspective();
+        }
+        else if(InputManager.isPressed(GLFW.GLFW_KEY_UP)){
+            Scene.view.FOV+=1;
+            Scene.view.updatePerspective();
+        }
         
         if(InputManager.isPressed(GLFW.GLFW_KEY_3)){
-            Vec3 ray = new Vec3();
+            Vector3f ray = new Vector3f();
             ray = view.raycast();
-            ray.multiply(10);
+            ray.mul(10);
             ray.add(view.pos);
-            dragon.rot.setFrom(view.rot);
-            dragon.pos.x=ray.x;
-            dragon.pos.y=ray.y;
-            dragon.pos.z=ray.z;
+            dragon.rot.set(view.rot);
+            dragon.pos.set(ray);
             dragon.updateTransform();
         }
         
         
         terrain.recenter(player.pos.x, player.pos.z,.25f);
         
-        float h = terrain.getHeightAt(player.pos.x, player.pos.z);
-        float slope = terrain.getHeightAt(player.pos.x+Math.copySign(.1f,player.delta_pos.x), player.pos.z+Math.copySign(.1f,player.delta_pos.z))-h;
-        if(slope>.2f){
-            System.out.println(slope);
-            player.delta_pos.x-=Math.copySign(slope*10*player.delta_pos.x,player.delta_pos.x);
-            player.delta_pos.z-=Math.copySign(slope*10*player.delta_pos.z,player.delta_pos.z);
-        }
-        if(player.pos.y<h){
-            player.pos.y=h;
-            player.delta_pos.y=0;
-        }
-        else if(player.pos.y>h+.01f){
-            player.delta_pos.y-=.7f;
-        }
+       
 
         //move sun to player
-        lights[0].pos.setFrom(player.pos);
+        lights[0].pos.set(player.pos);
         lights[0].pos.y+=100;
-        lights[0].pos.x+=100;
+        lights[0].pos.x+=50;
         
         
         //update camera

@@ -94,8 +94,8 @@ public class Main {
                             mainScene.view.aspect=(float)w/h;
                             mainScene.view.updatePerspective();
                         }
-                        InputManager.width = w;
-                        InputManager.height = h;
+                        InputManager.windowWidth = w;
+                        InputManager.windowHeight = h;
                     }
                 });
                 

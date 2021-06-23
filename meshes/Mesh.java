@@ -1,9 +1,5 @@
 package meshes;
 
-import entities.Terrain;
-import math.Vec2;
-import math.TransformMatrix;
-import math.Vec3;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -13,10 +9,10 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import static org.lwjgl.opengl.GL30.*;
-import shaders.GLSLShader;
-import textures.TextureManager;
 
 
 public class Mesh {
@@ -172,8 +168,8 @@ public class Mesh {
         BufferedReader reader = new BufferedReader(fileReader);
         String lineIn;
         List<Vertex> vertices = new ArrayList<Vertex>();
-        List<Vec2> uvs = new ArrayList<Vec2>();
-        List<Vec3> normals = new ArrayList<Vec3>();
+        List<Vector2f> uvs = new ArrayList<Vector2f>();
+        List<Vector3f> normals = new ArrayList<Vector3f>();
         List<Integer> faces = new ArrayList<Integer>();
 
         try {
@@ -182,20 +178,20 @@ public class Mesh {
                 String[] contents = lineIn.split(" ");
                 //vertex
                 if (lineIn.startsWith("v ")) {
-                    vertices.add(new Vertex(vertices.size(),new Vec3(
+                    vertices.add(new Vertex(vertices.size(),new Vector3f(
                             Float.parseFloat(contents[1]),
                             Float.parseFloat(contents[2]),
                             Float.parseFloat(contents[3])
                     )));
                 } //texture coordinate (uv)
                 else if (lineIn.startsWith("vt ")) {
-                    uvs.add(new Vec2(
+                    uvs.add(new Vector2f(
                             Float.parseFloat(contents[1]),
                             Float.parseFloat(contents[2])
                     ));
                 } //normal
                 else if (lineIn.startsWith("vn ")) {
-                    normals.add(new Vec3(
+                    normals.add(new Vector3f(
                             Float.parseFloat(contents[1]),
                             Float.parseFloat(contents[2]),
                             Float.parseFloat(contents[3])
@@ -316,14 +312,14 @@ public class Mesh {
     
     
     private class Vertex{
-        Vec3 pos;
+        Vector3f pos;
         int uvIndex;
         int normalIndex;
         Vertex duplicate;
         int index;
         float length;
         
-        public Vertex(int index, Vec3 pos){
+        public Vertex(int index, Vector3f pos){
             uvIndex = -1;
             normalIndex=-1;
             duplicate = null;
@@ -339,18 +335,17 @@ public class Mesh {
     
      public static float[] createFlatNormals(float[] points,int[] order){
         float[] normals = new float[order.length*3];
-            Vec3 a = new Vec3();
-            Vec3 b = new Vec3();
-            Vec3 c = new Vec3();
+            Vector3f a = new Vector3f();
+            Vector3f b = new Vector3f();
+            Vector3f c = new Vector3f();
         for(int i=0;i<order.length;i+=3){
             a.set(points[3 * order[i]], points[3 * order[i] + 1], points[3 * order[i] + 2]);
             b.set(points[3 * order[i + 1]], points[3 * order[i + 1] + 1], points[3 * order[i + 1] + 2]);
             c.set(points[3 * order[i + 2]], points[3 * order[i + 2] + 1], points[3 * order[i + 2] + 2]);
             
-            a.multiply(-1);
-            b.add(a);
-            c.add(a);
-            a=b.cross(c);
+            b.sub(a);
+            c.sub(a);
+            b.cross(c,a);
             
             normals[3*order[i]]=a.x;
             normals[3*order[i]+1]=a.y;
@@ -365,19 +360,18 @@ public class Mesh {
         //stores the number of normals for a vertex
         int[] normal_count = new int[normals.length/3];
         
-            Vec3 a = new Vec3();
-            Vec3 b = new Vec3();
-            Vec3 c = new Vec3();
+            Vector3f a = new Vector3f();
+            Vector3f b = new Vector3f();
+            Vector3f c = new Vector3f();
         //find the normal of each triangle
         for(int i=0;i<order.length;i+=3){
             a.set(points[3 * order[i]], points[3 * order[i] + 1], points[3 * order[i] + 2]);
             b.set(points[3 * order[i + 1]], points[3 * order[i + 1] + 1], points[3 * order[i + 1] + 2]);
             c.set(points[3 * order[i + 2]], points[3 * order[i + 2] + 1], points[3 * order[i + 2] + 2]);
             
-            a.multiply(-1);
-            b.add(a);
-            c.add(a);
-            a=b.cross(c);
+            b.sub(a);
+            c.sub(a);
+            b.cross(c,a);
             a.normalize();
             
             //store the normal of this triangle in each of the individual point's normals
