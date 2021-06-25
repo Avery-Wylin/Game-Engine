@@ -81,7 +81,7 @@ public class DynamicEntity extends Entity {
         boolean sideCollision=false;
         if(newPos.y<height){
             pos.y=height;
-            if((Math.abs(slope.x)>.4f || Math.abs(slope.z)>.4f)){
+            if((Math.abs(slope.x)>.5f || Math.abs(slope.z)>.5f)){
                 if(((slope.x>=0&&delta_pos.x>=0)||(slope.x<=0&&delta_pos.x<=0))&&((slope.z>=0&&delta_pos.z>=0)||(slope.z<=0&&delta_pos.z<=0))){
                     //going with slope
                     delta_pos.y *=-bounceFactor;

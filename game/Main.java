@@ -6,6 +6,10 @@ package game;
  */
 
 
+import com.sun.prism.impl.BufferUtil;
+import static game.InputManager.cursorDepth;
+import static game.InputManager.cursorX;
+import static game.InputManager.cursorY;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.*;
@@ -173,7 +177,8 @@ public class Main {
                 glfwPollEvents();
                 if(InputManager.isPressed(GLFW_KEY_ESCAPE))
                     glfwSetWindowShouldClose(window, true);
-                        
+                
+                    
 
                 delta = System.currentTimeMillis()-time;
             }

@@ -1,12 +1,23 @@
 package game;
 
+import com.sun.prism.impl.BufferUtil;
 import shaders.Light;
 import shaders.ShaderSettings;
 import entities.Entity;
 import entities.Terrain;
+import static game.InputManager.cursorDepth;
+import static game.InputManager.cursorX;
+import static game.InputManager.cursorY;
+import java.nio.FloatBuffer;
 import meshes.Mesh;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_2;
+import org.lwjgl.opengl.GL11;
+import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_FLOAT;
+import static org.lwjgl.opengl.GL11.glClear;
 import shaders.FBO;
 import shaders.LightShader;
 import shaders.GLSLShader;
@@ -19,6 +30,9 @@ public class Scene {
     
     //create camera
     public static Camera view = new Camera();
+    
+    //create FBOs
+    public static FBO depthBuffer = new FBO();
     
     //initialize all entities
     static Player player;
@@ -58,7 +72,11 @@ public class Scene {
         skySettings.horizon.set(.9f, .7f, .9f);
         //skySettings.albedo.set(0.0f, 0.0f, 0.0f);
         
-         
+        //create FBO settings
+        depthBuffer.loadFBO();
+        depthBuffer.createDepthAttachment();
+        depthBuffer.createColourTexture();
+        depthBuffer.createDepthTexture();
         
         //creates a specular shader
         shader = new LightShader("specular");
@@ -170,11 +188,14 @@ public class Scene {
         if(InputManager.isPressed(GLFW.GLFW_KEY_3)){
             Vector3f ray = new Vector3f();
             ray = view.raycast();
-            ray.mul(10);
             ray.add(view.pos);
-            dragon.rot.set(view.rot);
-            dragon.pos.set(ray);
-            dragon.updateTransform();
+            terrain.addHeight(ray.x,ray.z,.001f,5);
+        }
+        else if(InputManager.isPressed(GLFW.GLFW_KEY_4)){
+            Vector3f ray = new Vector3f();
+            ray = view.raycast();
+            ray.add(view.pos);
+            terrain.addHeight(ray.x,ray.z,-.001f,5);
         }
         
         
@@ -193,9 +214,19 @@ public class Scene {
     }
 
     public void draw() {
+        depthBuffer.start();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        GL11.glEnable(GL11.GL_DEPTH_TEST);
         ShaderSettings.renderAll();
         Terrain.render();
         skySettings.renderSky();
+        if (InputManager.isPressed(GLFW_KEY_2)) {
+            FloatBuffer depth = BufferUtil.newFloatBuffer(1);
+            GL11.glReadPixels((int)(cursorX*512f/InputManager.windowWidth), (int)((InputManager.windowHeight-cursorY)*512f/InputManager.windowHeight), 1, 1, GL11.GL_DEPTH_COMPONENT, GL_FLOAT, depth);
+            cursorDepth = Scene.view.convertCursorDepthToLinear(depth.get(0));
+        }
+        FBO.renderDefaultBuffer();
+        depthBuffer.draw();
     }
     
     public void unloadAssets(){

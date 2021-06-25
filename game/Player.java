@@ -51,8 +51,7 @@ public class Player extends DynamicEntity{
         }
         if(InputManager.isPressed(GLFW_KEY_F)){
             Vector3f dest = Scene.view.raycast();
-            dest.sub(pos);
-            delta_pos.mulAdd(speed*5,dest);
+            delta_pos.add(dest);
             isDynamic=true;
         }
         

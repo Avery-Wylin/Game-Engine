@@ -9,8 +9,9 @@ import java.util.ArrayList;
 import math.OpenSimplex2F;
 import meshes.Mesh;
 import org.joml.Matrix4f;
-import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import static org.lwjgl.opengl.GL30.*;
 import shaders.TerrainShader;
 import textures.TextureManager;
@@ -29,11 +30,13 @@ public class Terrain {
     static int z = 0;
     static int textureTop = TextureManager.loadTexture("grass");
     static int textureSide = TextureManager.loadTexture("rock");
-      
+    
+    private static float[] pos = new float[0];
+    private static int[] order = new int[0];
 
     public static OpenSimplex2F simplex = new OpenSimplex2F(123456);
     private float[] heights;
-
+    
     public Terrain() {
         heights = new float[HEIGHT_COUNT];
         loadDataFromObj("yinyang");
@@ -59,8 +62,14 @@ public class Terrain {
         //the number of squares used by the actual terrain height data
         int heightSquares = (int)sqrt(y.length);
 
-        float[] pos = new float[3 * vertexCount];
-        int[] order = new int[6 * totalRenderSquares];
+       // float[] pos = new float[3 * vertexCount];
+       //int[] order = new int[6 * totalRenderSquares];
+       if(pos.length != 3 * vertexCount){
+           pos=new float[3*vertexCount];
+       }
+       if(order.length != 6 * totalRenderSquares){
+           order=new int[6 * totalRenderSquares];
+       }
 
         //GENERATE POSITIONS AND UV
         int index = 0;
@@ -128,8 +137,7 @@ public class Terrain {
         }
         
         //terrains generate their uvs in the vertex shader
-        float[] normal = Mesh.createSmoothNormals(pos, order);
-        mesh.load(pos, order,null,normal);
+        mesh.load(pos, order,null,Mesh.createSmoothNormals(pos, order));
     }
     
     
@@ -283,7 +291,7 @@ public class Terrain {
       /**
        * Returns the square for the given the world space.
        */
-      public Vector2f getSquareAt(float wx, float wz){
+      public Vector2i getSquareAt(float wx, float wz){
           //modulate the world space
           wx%=SCALE;
           wz%=SCALE;
@@ -291,12 +299,12 @@ public class Terrain {
           wx+=wx<0?SCALE:0;
           wz+=wz<0?SCALE:0;
           //convert into square space
-          return new Vector2f(
+          return new Vector2i(
           (int)(wx/SCALE*(SIDE_SQUARE_COUNT))%SIDE_SQUARE_COUNT,
           (int)(wz/SCALE*(SIDE_SQUARE_COUNT))%SIDE_SQUARE_COUNT);
           
       }
-    
+      
       public static void render() {
         shader.start();
         glEnable(GL_CULL_FACE);
@@ -328,6 +336,40 @@ public class Terrain {
         float d1 = ((c.z-a.z)*(x-c.x)+(a.x-c.x)*(z-c.z))/denom;
         float d2 = 1f-d0-d1;
         return d0 * a.y + d1 * b.y + d2 * c.y;
+    }
+    
+    public Vector3f linePlaneIntersect(Vector3fc planeA, Vector3fc planeB, Vector3fc planeC, Vector3fc lineA, Vector3fc lineB) {
+        Vector3f normal = new Vector3f();
+        Vector3f BA = planeB.sub(planeA, null);
+        Vector3f CA = planeC.sub(planeA, null);
+        BA.cross(CA, normal);
+        normal.normalize();
+        float d = planeB.dot(normal);
+        return lineA.add(lineB.mul(((d - normal.dot(lineA)) / normal.dot(lineB)), null), null);
+    }
+
+    public void addHeight(float wx, float wz,float amount, int rad) {
+        Vector2i square = getSquareAt(wx, wz);
+        square.sub(rad,rad);
+        for(int r=0;r<rad*2+1;r++){
+            for(int c=0;c<rad*2+1;c++){
+                int sx=(square.x+c)%SIDE_SQUARE_COUNT;
+                if(sx<0)
+                    sx+=SIDE_SQUARE_COUNT;
+                int sy = (square.y+r)%SIDE_SQUARE_COUNT;
+                if(sy<0)
+                    sy+=SIDE_SQUARE_COUNT;
+                heights[sx+sy*SIDE_SQUARE_COUNT]+=amount;
+            }
+        }
+        
+//        if(wx%SQUARE_SCALE>SQUARE_SCALE/2f){
+//            square.x=(square.x+1)%SIDE_SQUARE_COUNT;
+//        }
+//        if(wz%SQUARE_SCALE>SQUARE_SCALE/2f){
+//            square.y=(square.y+1)%SIDE_SQUARE_COUNT;
+//        }
+        generateSubMesh(heights, x, z, RENDER_COUNT, terrainMesh);
     }
 
 }

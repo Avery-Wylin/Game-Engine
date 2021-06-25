@@ -19,13 +19,18 @@ public class Mesh {
     
     private static ArrayList<Mesh> loadedMeshes = new ArrayList<>() ;
     public static int ATTRB_POS=0, ATTRB_UV=1, ATTRB_NORMAL=2;
+    private static float[] tempNormals = new float[0];
+    private static int[] tempNormalCount = new int[0];
     
     protected boolean hasVAO = false;
     protected boolean hasUVs = false;
     protected int vaoId=0;
-    protected ArrayList<Integer> vboIds = new ArrayList<Integer>();
+    
+    int posVBO, uvVBO, normalVBO, orderVBO;
+    
     protected int vertexCount;
     protected float size;
+    
     
     public Mesh(){
         createVAO();
@@ -49,9 +54,10 @@ public class Mesh {
     public void removeVAO(){
         if (hasVAO) {
             hasVAO = false;
-            for (int vbo : vboIds) {
-                glDeleteBuffers(vbo);
-            }
+            glDeleteBuffers(posVBO);
+            glDeleteBuffers(uvVBO);
+            glDeleteBuffers(normalVBO);
+            glDeleteBuffers(orderVBO);
             glDeleteVertexArrays(vaoId);
         }
     }
@@ -73,46 +79,58 @@ public class Mesh {
     
     public void createVAO() {
         vaoId = glGenVertexArrays();
+        createVBOs();
         hasVAO = true;
+    }
+    
+    private void createVBOs(){
+        posVBO=glGenBuffers();
+        uvVBO = glGenBuffers();
+        normalVBO = glGenBuffers();
+        orderVBO = glGenBuffers();
     }
     
     /**
      * Loads all non-null parameters to their respective buffers.
      */
-    public void load(float[] vertexPos, int[] vertexOrder, float[] uv, float[] normals){
-        if(hasVAO){
-            glBindVertexArray(vaoId);
-            if(vertexOrder != null)
-            loadAttributeInt(vertexOrder,GL_ELEMENT_ARRAY_BUFFER,GL_STATIC_DRAW);
-            if(vertexPos != null)
-            loadAttributeVector(ATTRB_POS, vertexPos,3,GL_ARRAY_BUFFER,GL_STATIC_DRAW);
-            if(uv != null){
-                loadAttributeVector(ATTRB_UV, uv, 2, GL_ARRAY_BUFFER, GL_STATIC_DRAW);
-                hasUVs = true;
-            }
-            else{
-                hasUVs=false;
-            }
-            if(normals != null)
-            loadAttributeVector(ATTRB_NORMAL, normals, 3, GL_ARRAY_BUFFER, GL_STATIC_DRAW);
-            vertexCount = vertexOrder.length;
-            //unbind the current VAO
-            glBindVertexArray(0);
+    public void load(float[] vertexPos, int[] vertexOrder, float[] uv, float[] normals) {
+        if (!hasVAO) {
+            createVAO();
             loadedMeshes.add(this);
         }
+        
+        glBindVertexArray(vaoId);
+        if (vertexOrder != null) {
+            loadAttributeInt(orderVBO,vertexOrder, GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW);
+        }
+        if (vertexPos != null) {
+            loadAttributeVector(posVBO,ATTRB_POS, vertexPos, 3, GL_ARRAY_BUFFER, GL_STATIC_DRAW);
+        }
+        if (uv != null) {
+            loadAttributeVector(uvVBO,ATTRB_UV, uv, 2, GL_ARRAY_BUFFER, GL_STATIC_DRAW);
+            hasUVs = true;
+        } else {
+            hasUVs = false;
+        }
+        if (normals != null) {
+            loadAttributeVector(normalVBO,ATTRB_NORMAL, normals, 3, GL_ARRAY_BUFFER, GL_STATIC_DRAW);
+        }
+        vertexCount = vertexOrder.length;
+        //unbind the current VAO
+        glBindVertexArray(0);
     }
     
     
     
-    void loadAttributeVector(int attributeId, float[] attribute, int attributeSize, int glType, int glDraw){
-        int vboId = glGenBuffers();
-        vboIds.add(vboId);
-        glBindBuffer(glType,vboId);
+    void loadAttributeVector(int VBOid ,int attributeId, float[] attribute, int attributeSize, int glType, int glDraw){
+        //int vboId = glGenBuffers();
+        //vboIds.add(vboId);
+        glBindBuffer(glType,VBOid);
         
-        FloatBuffer bufferedAttribute = BufferUtils.createFloatBuffer(attribute.length);
-        bufferedAttribute.put(attribute);
-        bufferedAttribute.flip();
-        glBufferData(glType, bufferedAttribute, glDraw);
+        //FloatBuffer bufferedAttribute = BufferUtils.createFloatBuffer(attribute.length);
+        //bufferedAttribute.put(attribute);
+        //bufferedAttribute.flip();
+        glBufferData(glType, attribute, glDraw);
         
         // attributeId dimensions type isNormalized distanceBetweenVerticies offset
         glVertexAttribPointer(attributeId, attributeSize, GL_FLOAT, false, 0, 0);
@@ -122,15 +140,15 @@ public class Mesh {
         
     }
     
-    void loadAttributeInt(int[] attribute, int glType,int glDraw){
-        int vboId = glGenBuffers();
-        vboIds.add(vboId);
-        glBindBuffer(glType,vboId);
+    void loadAttributeInt(int VBOid, int[] attribute, int glType,int glDraw){
+        //int vboId = glGenBuffers();
+        //vboIds.add(vboId);
+        glBindBuffer(glType,VBOid);
         
-        IntBuffer bufferedAttribute = BufferUtils.createIntBuffer(attribute.length);
-        bufferedAttribute.put(attribute);
-        bufferedAttribute.flip();
-        glBufferData(glType, bufferedAttribute, glDraw);
+        //IntBuffer bufferedAttribute = BufferUtils.createIntBuffer(attribute.length);
+        //bufferedAttribute.put(attribute);
+        //bufferedAttribute.flip();
+        glBufferData(glType, attribute, glDraw);
     }
     
     
@@ -356,13 +374,19 @@ public class Mesh {
     
     public static float[] createSmoothNormals(float[] points, int[] order){
         //stores the normals in vertex order
-        float[] normals = new float[points.length];
+        //float[] normals = new float[points.length];
+        if(tempNormals.length!=points.length){
+            tempNormals=new float[points.length];
+        }
         //stores the number of normals for a vertex
-        int[] normal_count = new int[normals.length/3];
+        //int[] normal_count = new int[normals.length/3];
+        if(tempNormalCount.length!=points.length/3){
+            tempNormalCount = new int[points.length/3];
+        }
         
-            Vector3f a = new Vector3f();
-            Vector3f b = new Vector3f();
-            Vector3f c = new Vector3f();
+        Vector3f a = new Vector3f();
+        Vector3f b = new Vector3f();
+        Vector3f c = new Vector3f();
         //find the normal of each triangle
         for(int i=0;i<order.length;i+=3){
             a.set(points[3 * order[i]], points[3 * order[i] + 1], points[3 * order[i] + 2]);
@@ -378,33 +402,33 @@ public class Mesh {
             //add the normals, they will be divided after the loop completes
             
             //point a
-            normals[3*order[i]]+=a.x;
-            normals[3*order[i]+1]+=a.y;
-            normals[3*order[i]+2]+=a.z;
+            tempNormals[3*order[i]]+=a.x;
+            tempNormals[3*order[i]+1]+=a.y;
+            tempNormals[3*order[i]+2]+=a.z;
             //point b
-            normals[3*order[i+1]]+=a.x;
-            normals[3*order[i+1]+1]+=a.y;
-            normals[3*order[i+1]+2]+=a.z;
+            tempNormals[3*order[i+1]]+=a.x;
+            tempNormals[3*order[i+1]+1]+=a.y;
+            tempNormals[3*order[i+1]+2]+=a.z;
             //point c
-            normals[3*order[i+2]]+=a.x;
-            normals[3*order[i+2]+1]+=a.y;
-            normals[3*order[i+2]+2]+=a.z;
+            tempNormals[3*order[i+2]]+=a.x;
+            tempNormals[3*order[i+2]+1]+=a.y;
+            tempNormals[3*order[i+2]+2]+=a.z;
             
             //increment each points normal count
-            normal_count[order[i]]++;
-            normal_count[order[i+1]]++;
-            normal_count[order[i+2]]++;
+            tempNormalCount[order[i]]++;
+            tempNormalCount[order[i+1]]++;
+            tempNormalCount[order[i+2]]++;
         }
         
         //divide the normals
         int count = 0;
-        for (int i = 0; i < normals.length; i += 3) {
-            count = normal_count[i / 3];
-            normals[i] /= count;
-            normals[i + 1] /= count;
-            normals[i + 2] /= count;
+        for (int i = 0; i < tempNormals.length; i += 3) {
+            count = tempNormalCount[i / 3];
+            tempNormals[i] /= count;
+            tempNormals[i + 1] /= count;
+            tempNormals[i + 2] /= count;
         }
-        return normals; 
+        return tempNormals; 
     }
     
 }

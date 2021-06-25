@@ -1,15 +1,21 @@
 package shaders;
+import game.InputManager;
 import static org.lwjgl.opengl.GL30.*;
 
 import java.util.ArrayList;
+import meshes.Mesh;
 import textures.TextureManager;
 
 public class FBO {
     private static ArrayList<FBO> loadedFBOs = new ArrayList<>();
-    private static int w=256,h=256;
+    private static TextureShader shader = new TextureShader();
+    private static Mesh windowMesh = new Mesh(new float[]{-1,-1,0, 1,-1,0, 1,1,0, -1,1,0 },new int[]{0,1,2,2,3,0},new float[]{0,0,1,0,1,1,0,1},null);
     
+    public int w=512,h=512;
     int FBOid;
     int depthId;
+    int depthTextureId;
+    int textureId;
     
     public FBO(){
         
@@ -17,8 +23,11 @@ public class FBO {
     
     public void loadFBO(){
         FBOid = glGenFramebuffers();
+        shader.loadResolution(w);
         glBindFramebuffer(GL_FRAMEBUFFER, FBOid);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        
+        glReadBuffer(GL_DEPTH_ATTACHMENT);
     }
     
     
@@ -32,11 +41,24 @@ public class FBO {
         
     }
     
-    public void createTexture(){
-        TextureManager.loadColourFromFBO("FBOColour"+FBOid, this, w, h);
+    public void stop(){
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
     
-    private int createDepthAttachment(int w,int h){
+    public static void renderDefaultBuffer(){
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0,0,InputManager.windowWidth,InputManager.windowHeight);
+    }
+    
+    public void createColourTexture(){
+        textureId = TextureManager.loadColourFromFBO("FBOColour"+FBOid, this, w, h);
+    }
+    
+    public void createDepthTexture(){
+        depthTextureId = TextureManager.loadDepthFromFBO("FBODepth"+FBOid, this, w, h);
+    }
+    
+    public int createDepthAttachment(){
         int depthId = glGenRenderbuffers();
         glBindRenderbuffer(GL_RENDERBUFFER, depthId);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h);
@@ -54,5 +76,17 @@ public class FBO {
             glDeleteFramebuffers(temp.FBOid);
             glDeleteRenderbuffers(temp.depthId);
         }
+    }
+    
+    public void draw(){
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, depthTextureId);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureId);
+        shader.start();
+        shader.loadResolution(1f/w);
+        windowMesh.bindVAO();
+        glDrawElements(GL_TRIANGLES, windowMesh.getVertexCount(), GL_UNSIGNED_INT, 0);
+        windowMesh.unbindVAO();
     }
 }

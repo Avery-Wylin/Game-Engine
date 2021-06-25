@@ -6,6 +6,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.lwjgl.opengl.GL11;
 
 public class Camera {
     public Matrix4f perspective;
@@ -61,13 +62,15 @@ public class Camera {
     public Vector3f raycast(){
         Vector2f in = new Vector2f();
         in = screenToGL();
-        Vector3f ray = new Vector3f(in.x,in.y,1f);
+        Vector4f ray = new Vector4f(in.x,in.y,-1f,1f);
         inversePerspective.transformProject(ray);
-        ray.rotateX(rot.x);
-        ray.rotateY(rot.y);
-        ray.rotateZ(rot.z);
-        ray.normalize();
-        return ray;
+        Vector3f projectedRay = new Vector3f(ray.x,ray.y,ray.z);
+        projectedRay.rotateX(rot.x);
+        projectedRay.rotateY(rot.y);
+        projectedRay.rotateZ(rot.z);
+        projectedRay.normalize();
+        projectedRay.mul(InputManager.cursorDepth);
+        return projectedRay;
     }
     
     public Vector2f screenToGL(){
@@ -78,6 +81,10 @@ public class Camera {
         
     }
     
+    public float convertCursorDepthToLinear(float depth){
+        return (2.0f * nearPlane * farPlane) / (farPlane + nearPlane - (depth * 2.0f - 1.0f) * (farPlane - nearPlane));
+    }
+    
     public void rotateAround(Vector3f pos2, Vector3f rot2, float rad){
         pos.set(pos2);
         rot.set(rot2);
@@ -86,6 +93,7 @@ public class Camera {
         pos.z+=angle*rad*cos(rot2.y);
         pos.y+=rad*(-sin(rot2.x))+1f;
     }
+    
     
     
     
