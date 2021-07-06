@@ -14,6 +14,7 @@ public class SkyShader extends GLSLShader {
     @Override
     protected void bindAttributes() {
         super.bindAttribute(Mesh.ATTRB_POS, "pos");
+        super.bindAttribute(Mesh.ATTRB_POS, "normal");
     }
     
     @Override

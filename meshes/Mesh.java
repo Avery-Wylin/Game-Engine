@@ -17,7 +17,7 @@ import static org.lwjgl.opengl.GL30.*;
 
 public class Mesh {
     
-    private static ArrayList<Mesh> loadedMeshes = new ArrayList<>() ;
+    protected static ArrayList<Mesh> loadedMeshes = new ArrayList<>() ;
     public static int ATTRB_POS=0, ATTRB_UV=1, ATTRB_NORMAL=2;
     private static float[] tempNormals = new float[0];
     private static int[] tempNormalCount = new int[0];
@@ -54,10 +54,7 @@ public class Mesh {
     public void removeVAO(){
         if (hasVAO) {
             hasVAO = false;
-            glDeleteBuffers(posVBO);
-            glDeleteBuffers(uvVBO);
-            glDeleteBuffers(normalVBO);
-            glDeleteBuffers(orderVBO);
+            deleteVBOs();
             glDeleteVertexArrays(vaoId);
         }
     }
@@ -70,7 +67,7 @@ public class Mesh {
         }
     }
     
-    public static void removeAll(){
+    public static void deleteAll(){
         for(Mesh mesh:loadedMeshes){
             mesh.removeVAO();
         }
@@ -83,11 +80,18 @@ public class Mesh {
         hasVAO = true;
     }
     
-    private void createVBOs(){
+    protected void createVBOs(){
         posVBO=glGenBuffers();
         uvVBO = glGenBuffers();
         normalVBO = glGenBuffers();
         orderVBO = glGenBuffers();
+    }
+    
+    protected void deleteVBOs(){
+         glDeleteBuffers(posVBO);
+         glDeleteBuffers(uvVBO);
+         glDeleteBuffers(normalVBO);
+         glDeleteBuffers(orderVBO);
     }
     
     /**
@@ -104,16 +108,16 @@ public class Mesh {
             loadAttributeInt(orderVBO,vertexOrder, GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW);
         }
         if (vertexPos != null) {
-            loadAttributeVector(posVBO,ATTRB_POS, vertexPos, 3, GL_ARRAY_BUFFER, GL_STATIC_DRAW);
+            loadAttributeVectorf(posVBO,ATTRB_POS, vertexPos, 3, GL_ARRAY_BUFFER, GL_STATIC_DRAW);
         }
         if (uv != null) {
-            loadAttributeVector(uvVBO,ATTRB_UV, uv, 2, GL_ARRAY_BUFFER, GL_STATIC_DRAW);
+            loadAttributeVectorf(uvVBO,ATTRB_UV, uv, 2, GL_ARRAY_BUFFER, GL_STATIC_DRAW);
             hasUVs = true;
         } else {
             hasUVs = false;
         }
         if (normals != null) {
-            loadAttributeVector(normalVBO,ATTRB_NORMAL, normals, 3, GL_ARRAY_BUFFER, GL_STATIC_DRAW);
+            loadAttributeVectorf(normalVBO,ATTRB_NORMAL, normals, 3, GL_ARRAY_BUFFER, GL_STATIC_DRAW);
         }
         vertexCount = vertexOrder.length;
         //unbind the current VAO
@@ -122,7 +126,7 @@ public class Mesh {
     
     
     
-    void loadAttributeVector(int VBOid ,int attributeId, float[] attribute, int attributeSize, int glType, int glDraw){
+    void loadAttributeVectorf(int VBOid ,int attributeId, float[] attribute, int attributeSize, int glType, int glDraw){
         //int vboId = glGenBuffers();
         //vboIds.add(vboId);
         glBindBuffer(glType,VBOid);
@@ -156,14 +160,14 @@ public class Mesh {
         glBindVertexArray(vaoId);
         glEnableVertexAttribArray(ATTRB_POS);
         if(hasUVs)
-        glEnableVertexAttribArray(ATTRB_UV);
+            glEnableVertexAttribArray(ATTRB_UV);
         glEnableVertexAttribArray(ATTRB_NORMAL);
     }
     
     public void unbindVAO(){
         glDisableVertexAttribArray(ATTRB_POS);
         if(hasUVs)
-        glDisableVertexAttribArray(ATTRB_UV);
+            glDisableVertexAttribArray(ATTRB_UV);
         glDisableVertexAttribArray(ATTRB_NORMAL);
         glBindVertexArray(0);  
     }

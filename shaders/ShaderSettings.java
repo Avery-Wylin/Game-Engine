@@ -4,6 +4,7 @@ import entities.Entity;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import meshes.Mesh;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 import static org.lwjgl.opengl.GL30.*;
@@ -12,8 +13,8 @@ public class ShaderSettings {
     
     public static ArrayList<ShaderSettings> loadedShaderSettings = new ArrayList<>();
     public static Vector3f ambient = new Vector3f(.5f,.5f,.5f);
-    public static float fogDensity = .01f;
-    public static float fogGradient = 2f;
+    public static float fogDensity = .015f;
+    public static float fogGradient = 4f;
     public static Light[] lights = new Light[LightShader.MAX_LIGHTS];
     
     public LinkedList<Entity> assignedEntities = new LinkedList<>();
@@ -156,10 +157,11 @@ public class ShaderSettings {
     public void render(){
         loadShaderSettings();
         for(Entity e:assignedEntities){
-            //load all variable properties
-            shader.loadTransformationMatrix(e.transform);
-            //draw 
-            glDrawElements(GL_TRIANGLES, mesh.getVertexCount(),GL_UNSIGNED_INT,0);
+            if(e.visible){
+                //load all variable properties
+                shader.loadTransformationMatrix(e.getTransform());
+                glDrawElements(GL_TRIANGLES, mesh.getVertexCount(),GL_UNSIGNED_INT,0);
+            }
         }
         unloadShaderSettings();
     }

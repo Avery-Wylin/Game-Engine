@@ -16,5 +16,5 @@ void main(void){
     //depth = (2.0f * near * far) / (far + near - (depth * 2.0f - 1.0f) * (far - near));
     //depth/=far;
 
-    colour += texture(imageTexture,uvCoord);
+    colour = texture(imageTexture,uvCoord);
 }

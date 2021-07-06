@@ -1,13 +1,11 @@
 package game;
 
-import com.sun.prism.impl.BufferUtil;
 import static game.Main.mainScene;
-import java.nio.FloatBuffer;
+import static game.Scene.view;
 import java.util.HashMap;
+import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import static org.lwjgl.glfw.GLFW.glfwSetCursorPos;
-import org.lwjgl.opengl.GL11;
-import static org.lwjgl.opengl.GL11.GL_FLOAT;
 
 
 
@@ -39,6 +37,15 @@ public final class InputManager {
     
     public static void pressAction(int key){
         Scene.player.input(key);
+        if (key == GLFW.GLFW_KEY_T) {
+            Vector3f ray = new Vector3f();
+            ray = view.raycast();
+            ray.add(view.pos);
+            Scene.marker.pos.set(ray);
+            Scene.marker.visible=true;
+            Scene.marker.markRenderUpdate();
+            System.out.println("CLICKY");
+        }
     }
 
     static void releaseKeyAction(int key) {

@@ -50,9 +50,9 @@ public abstract class GLSLShader {
         return glGetUniformLocation(programId, uniformName);
     }
     
-    protected void loadUniformMatrix4f(int location, Matrix4f transform){
-        FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
-        transform.get(buffer);
+    protected void loadUniformMatrix4f(int location, Matrix4f matrix){
+        float[] buffer = new float[16];
+        matrix.get(buffer);
         glUniformMatrix4fv(location, false, buffer);
     }
     

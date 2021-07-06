@@ -60,7 +60,7 @@ public class Player extends DynamicEntity{
     }
 
     @Override
-    public void updateTransform() {
+    protected void updateTransform() {
        transform
        .translation(pos.x, pos.y, pos.z)
        .scale(scale.x, scale.y, scale.z)

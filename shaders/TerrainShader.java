@@ -1,6 +1,7 @@
 package shaders;
 
 import meshes.Mesh;
+import meshes.TerrainMesh;
 import org.joml.Vector3f;
 
 public class TerrainShader extends GLSLShader {
@@ -27,7 +28,7 @@ public class TerrainShader extends GLSLShader {
     @Override
     protected void bindAttributes() {
         super.bindAttribute(Mesh.ATTRB_POS, "pos");
-        super.bindAttribute(Mesh.ATTRB_UV, "uv");
+        super.bindAttribute(TerrainMesh.ATTRB_TERRAIN, "terrainData");
         super.bindAttribute(Mesh.ATTRB_NORMAL,"normal");
     }
     

@@ -17,8 +17,9 @@ public class FBO {
     int depthTextureId;
     int textureId;
     
-    public FBO(){
-        
+    public FBO(int w, int h){
+        this.w=w;
+        this.h=h;
     }
     
     public void loadFBO(){

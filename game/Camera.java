@@ -65,11 +65,10 @@ public class Camera {
         Vector4f ray = new Vector4f(in.x,in.y,-1f,1f);
         inversePerspective.transformProject(ray);
         Vector3f projectedRay = new Vector3f(ray.x,ray.y,ray.z);
+        projectedRay.mul((InputManager.cursorDepth-.1f)*(1f/-projectedRay.z));
         projectedRay.rotateX(rot.x);
         projectedRay.rotateY(rot.y);
         projectedRay.rotateZ(rot.z);
-        projectedRay.normalize();
-        projectedRay.mul(InputManager.cursorDepth);
         return projectedRay;
     }
     

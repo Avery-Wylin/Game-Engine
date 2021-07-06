@@ -1,23 +1,22 @@
 package game;
 
+import shaders.SkySettings;
 import com.sun.prism.impl.BufferUtil;
 import shaders.Light;
 import shaders.ShaderSettings;
 import entities.Entity;
+import entities.EntityManager;
 import entities.Terrain;
 import static game.InputManager.cursorDepth;
 import static game.InputManager.cursorX;
 import static game.InputManager.cursorY;
+import static java.lang.Math.random;
 import java.nio.FloatBuffer;
 import meshes.Mesh;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_2;
-import org.lwjgl.opengl.GL11;
-import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_FLOAT;
-import static org.lwjgl.opengl.GL11.glClear;
+import static org.lwjgl.opengl.GL30.*;
 import shaders.FBO;
 import shaders.LightShader;
 import shaders.GLSLShader;
@@ -32,11 +31,15 @@ public class Scene {
     public static Camera view = new Camera();
     
     //create FBOs
-    public static FBO depthBuffer = new FBO();
+    public static FBO displayFBO = new FBO(1024,1024);
+    
+    //initialize Entity Manager
+    EntityManager entityManager;
     
     //initialize all entities
     static Player player;
-    Entity dragon;
+    Entity[] trees;
+    static Entity marker;
     
     //initialize all shaders
     LightShader shader;
@@ -68,25 +71,25 @@ public class Scene {
         
         //load sky settings
         skySettings = new SkySettings();
-        //skySettings.zenith.set(0.0f, 0.0f, 0.2f);
-        skySettings.horizon.set(.9f, .7f, .9f);
-        //skySettings.albedo.set(0.0f, 0.0f, 0.0f);
+        skySettings.zenith.set(1f, 0.0f,0.0f);
+        skySettings.horizon.set(0.0f, 1.0f, 0.0f);
+        skySettings.albedo.set(0.0f, 0.0f, 1.0f);
         
         //create FBO settings
-        depthBuffer.loadFBO();
-        depthBuffer.createDepthAttachment();
-        depthBuffer.createColourTexture();
-        depthBuffer.createDepthTexture();
+        displayFBO.loadFBO();
+        displayFBO.createDepthAttachment();
+        displayFBO.createColourTexture();
+        displayFBO.createDepthTexture();
         
         //creates a specular shader
         shader = new LightShader("specular");
         
         //create lights
         lights = new Light[4];
-        lights[0] = new Light(new Vector3f(0f,100f,00f),new Vector3f(1f,.9f,.6f),new Vector3f(1f,0f,0f));
-        lights[1] = new Light(new Vector3f(5f,20f,-10f),new Vector3f(1f,0f,0f),new Vector3f(1f,0f,.1f));
-        lights[2] = new Light(new Vector3f(5f,20f,-10f),new Vector3f(0f,1f,0f),new Vector3f(1f,0f,.1f));
-        lights[3] = new Light(new Vector3f(5f,20f,-10f),new Vector3f(0f,0f,1f),new Vector3f(1f,0f,.1f));
+        lights[0] = new Light(new Vector3f(0f,100f,00f),new Vector3f(1f,.95f,.85f),new Vector3f(1f,0f,0f));
+        lights[1] = new Light(new Vector3f(5f,20f,-10f),new Vector3f(1f,0f,0f),new Vector3f(0f,.1f,0.0f));
+        lights[2] = new Light(new Vector3f(5f,20f,-10f),new Vector3f(0f,1f,0f),new Vector3f(0f,.1f,0.0f));
+        lights[3] = new Light(new Vector3f(5f,20f,-10f),new Vector3f(0f,0f,1f),new Vector3f(0f,.1f,0.0f));
         
         ShaderSettings.lights[0]=lights[0];
         ShaderSettings.lights[1]=lights[1];
@@ -108,9 +111,10 @@ public class Scene {
         
         ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Tree", shader, tree_mesh));
         ShaderSettings.loadedShaderSettings.get(2).textureId=-1;
-        ShaderSettings.loadedShaderSettings.get(2).diffuseColour= new Vector3f(.3f,.7f,.1f);
+        ShaderSettings.loadedShaderSettings.get(2).diffuseColour= new Vector3f(.3f,.8f,.4f);
         ShaderSettings.loadedShaderSettings.get(2).shine=3f;
         ShaderSettings.loadedShaderSettings.get(2).specular=.5f;
+        ShaderSettings.loadedShaderSettings.get(2).backfaceCulling=false;
         
         ShaderSettings.loadedShaderSettings.add(new ShaderSettings("Plane", shader, plane_mesh));
         ShaderSettings.loadedShaderSettings.get(3).textureId=-1;
@@ -118,24 +122,39 @@ public class Scene {
         ShaderSettings.loadedShaderSettings.get(3).shine=2f;
         ShaderSettings.loadedShaderSettings.get(3).specular=.05f;
         
-        //create entities
-         
-        dragon = new Entity();
-        dragon.scale.mul(.2f);
-        dragon.updateTransform();
-        
-        player = new Player();
-        player.scale.mul(.5f);
-        player.updateTransform();
-        
-        
-        
-        //assign entities to render settings
-        ShaderSettings.assignEntity(0, dragon);
-        ShaderSettings.assignEntity(1, player);
         
         //create terrain
         terrain = new Terrain();
+        
+        //create Entity Manager
+        entityManager = new EntityManager();
+        
+        //create entities
+        player = new Player();
+        player.scale.mul(.5f);
+        player.markRenderUpdate();
+        ShaderSettings.assignEntity(1, player);
+        
+        marker = new Entity();
+        marker.scale.mul(.1f);
+        ShaderSettings.assignEntity(1, marker);
+        marker.markRenderUpdate();
+        entityManager.add(marker);
+        
+        trees = new Entity[200];
+        for(int i=0;i<trees.length;i++){
+            trees[i] = new Entity();
+            trees[i].pos.x=(float)random()*Terrain.SCALE;
+            trees[i].pos.z=(float)random()*Terrain.SCALE;
+            trees[i].pos.y=terrain.getHeightAndSlope(trees[i].pos.x, trees[i].pos.z, null);
+            trees[i].rot.y=(float)(random()*Math.PI*2);
+            trees[i].scale.mul(1.5f*(float)random()+.5f);
+            trees[i].markRenderUpdate();
+            ShaderSettings.assignEntity(2, trees[i]);
+            entityManager.add(trees[i]);
+        }
+        
+        
         
         //reload camera perspective matrix
         view.updatePerspective();
@@ -168,14 +187,31 @@ public class Scene {
         player.update(delta);
         
         //key inputs
-        if(InputManager.isPressed(GLFW.GLFW_KEY_L))
+        if (InputManager.isPressed(GLFW.GLFW_KEY_L)){
             lights[0].pos.set(player.pos);
-        else if(InputManager.isPressed(GLFW.GLFW_KEY_R))
-            lights[1].pos.set(player.pos);
-        else if(InputManager.isPressed(GLFW.GLFW_KEY_G))
-            lights[2].pos.set(player.pos);
-        else if(InputManager.isPressed(GLFW.GLFW_KEY_B))
-            lights[3].pos.set(player.pos);
+        }
+        else if (InputManager.isPressed(GLFW.GLFW_KEY_R)) {
+            Vector3f ray = new Vector3f();
+            ray = view.raycast();
+            ray.add(view.pos);
+            lights[1].pos.set(ray);
+            
+
+        } else if (InputManager.isPressed(GLFW.GLFW_KEY_G)) {
+            Vector3f ray = new Vector3f();
+            ray = view.raycast();
+            ray.add(view.pos);
+            lights[2].pos.set(ray);
+            
+
+        } else if (InputManager.isPressed(GLFW.GLFW_KEY_B)) {
+            Vector3f ray = new Vector3f();
+            ray = view.raycast();
+            ray.add(view.pos);
+            lights[3].pos.set(ray);
+            
+
+        } 
         else if(InputManager.isPressed(GLFW.GLFW_KEY_DOWN)){
             Scene.view.FOV-=1;
             Scene.view.updatePerspective();
@@ -189,24 +225,30 @@ public class Scene {
             Vector3f ray = new Vector3f();
             ray = view.raycast();
             ray.add(view.pos);
-            terrain.addHeight(ray.x,ray.z,.001f,5);
+            terrain.addHeight(ray.x,ray.z,1,5);
         }
         else if(InputManager.isPressed(GLFW.GLFW_KEY_4)){
             Vector3f ray = new Vector3f();
             ray = view.raycast();
             ray.add(view.pos);
-            terrain.addHeight(ray.x,ray.z,-.001f,5);
+            terrain.addHeight(ray.x,ray.z,-1,5);
+        }
+        else if(InputManager.isPressed(GLFW.GLFW_KEY_5)){
+            Vector3f ray = new Vector3f();
+            ray = view.raycast();
+            ray.add(view.pos);
+            terrain.smoothHeight(ray.x,ray.z,5);
         }
         
         
-        terrain.recenter(player.pos.x, player.pos.z,.25f);
-        
+        terrain.recenter(player.pos.x, player.pos.z,.5f);
+        entityManager.setVisibleByRadius(player.pos.x, player.pos.z, 50f,.25f);
        
 
         //move sun to player
         lights[0].pos.set(player.pos);
-        lights[0].pos.y+=100;
-        lights[0].pos.x+=50;
+        lights[0].pos.y+=25;
+        lights[0].pos.x+=100;
         
         
         //update camera
@@ -214,24 +256,43 @@ public class Scene {
     }
 
     public void draw() {
-        depthBuffer.start();
+        //render to display FBO
+        displayFBO.start();
+        
+        //enable clip distance
+        glEnable(GL_CLIP_DISTANCE0);
+        
+        //allow depth testing
+        glEnable(GL_DEPTH_TEST);
+        
+        //clear the FBO Colour
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
+        
+        //render all used meshes
         ShaderSettings.renderAll();
         Terrain.render();
+        
+        //disable clip distance, render sky
+        glDisable(GL_CLIP_DISTANCE0);
         skySettings.renderSky();
+        
+        //get height under mouse if required
         if (InputManager.isPressed(GLFW_KEY_2)) {
             FloatBuffer depth = BufferUtil.newFloatBuffer(1);
-            GL11.glReadPixels((int)(cursorX*512f/InputManager.windowWidth), (int)((InputManager.windowHeight-cursorY)*512f/InputManager.windowHeight), 1, 1, GL11.GL_DEPTH_COMPONENT, GL_FLOAT, depth);
+            glReadPixels((int)(cursorX*displayFBO.w/InputManager.windowWidth), (int)((InputManager.windowHeight-cursorY)*displayFBO.h/InputManager.windowHeight), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, depth);
             cursorDepth = Scene.view.convertCursorDepthToLinear(depth.get(0));
         }
+        
+        //swap to default FBO
         FBO.renderDefaultBuffer();
-        depthBuffer.draw();
+        
+        //draw the depth buffer FBO
+        displayFBO.draw();
     }
     
     public void unloadAssets(){
         GLSLShader.deleteAll();
-        Mesh.removeAll();
+        Mesh.deleteAll();
         TextureManager.deleteAllTextures();
         FBO.deleteAllFBOs();
     }
